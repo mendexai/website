@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mendex — AI-Powered E2E Test Automation</title>
+  <meta name="description" content="Mendex automatically generates, runs, and self-heals your end-to-end tests using AI. No coding required." />
+  <meta property="og:title" content="Mendex — AI-Powered E2E Test Automation" />
+  <meta property="og:description" content="Automatically generate, run, and self-heal browser tests with AI. Stop writing selectors. Start shipping with confidence." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #050810;
+      --bg-card:      #0d1120;
+      --bg-card-2:    #111827;
+      --border:       rgba(255,255,255,.07);
+      --border-glow:  rgba(124,58,237,.35);
+      --accent:       #7c3aed;
+      --accent-2:     #06b6d4;
+      --accent-3:     #f59e0b;
+      --text:         #f1f5f9;
+      --text-muted:   #94a3b8;
+      --text-subtle:  #475569;
+      --radius:       16px;
+      --radius-sm:    10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    /* ─── Noise texture overlay ─────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Utility ────────────────────────────────────────────────────────────── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(124,58,237,.12); border: 1px solid rgba(124,58,237,.3);
+      color: #a78bfa; font-size: 12px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 999px;
+    }
+    .badge::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #06b6d4 60%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 999px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: all .2s ease; border: none; outline: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff;
+      box-shadow: 0 0 40px rgba(124,58,237,.4), 0 4px 16px rgba(0,0,0,.4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 60px rgba(124,58,237,.55), 0 8px 24px rgba(0,0,0,.5);
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.1); color: var(--text); transform: translateY(-1px); }
+
+    /* ─── Nav ────────────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1160px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 0;
+      border-bottom: 1px solid transparent;
+      transition: all .3s;
+    }
+    nav.scrolled .nav-inner {
+      background: rgba(5,8,16,.85);
+      backdrop-filter: blur(20px);
+      border-color: var(--border);
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      margin-top: 8px;
+    }
+    .nav-logo {
+      font-size: 20px; font-weight: 800; letter-spacing: -.5px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--text-muted); transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { display: flex; align-items: center; gap: 12px; }
+
+    /* ─── Hero ───────────────────────────────────────────────────────────────── */
+    .hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center;
+      padding: 120px 24px 80px;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; pointer-events: none;
+    }
+    .hero-glow-1 {
+      width: 800px; height: 800px; top: -200px; left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(124,58,237,.18) 0%, transparent 70%);
+    }
+    .hero-glow-2 {
+      width: 600px; height: 600px; bottom: -100px; right: -150px;
+      background: radial-gradient(circle, rgba(6,182,212,.12) 0%, transparent 70%);
+    }
+    .hero-glow-3 {
+      width: 500px; height: 500px; bottom: 0; left: -150px;
+      background: radial-gradient(circle, rgba(245,158,11,.08) 0%, transparent 70%);
+    }
+    .hero-badge { margin-bottom: 28px; }
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 80px);
+      font-weight: 900; letter-spacing: -2.5px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    .hero-sub {
+      font-size: clamp(17px, 2.5vw, 21px);
+      color: var(--text-muted); max-width: 620px;
+      margin: 0 auto 40px; line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 64px; }
+    .hero-meta {
+      display: flex; gap: 32px; align-items: center; justify-content: center;
+      flex-wrap: wrap;
+    }
+    .hero-meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-subtle); }
+    .hero-meta-item span { color: var(--text-muted); font-weight: 500; }
+
+    /* ─── App preview ────────────────────────────────────────────────────────── */
+    .app-preview-wrap {
+      position: relative; max-width: 960px; margin: 0 auto;
+      padding: 0 24px 100px;
+    }
+    .app-preview-glow {
+      position: absolute; inset: 20px -40px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(124,58,237,.25) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .app-preview {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04) inset;
+    }
+    .app-titlebar {
+      background: #0a0e1a;
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .app-dot:nth-child(1) { background: #ff5f57; }
+    .app-dot:nth-child(2) { background: #febc2e; }
+    .app-dot:nth-child(3) { background: #28c840; }
+    .app-titlebar-text {
+      margin-left: 12px; font-size: 12px; color: var(--text-subtle);
+      font-weight: 500;
+    }
+    .app-body {
+      display: grid; grid-template-columns: 200px 1fr;
+      min-height: 480px;
+    }
+    .app-sidebar-mock {
+      background: rgba(0,0,0,.2);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .app-sidebar-logo {
+      font-size: 15px; font-weight: 800; margin-bottom: 20px;
+      color: var(--text); padding: 0 6px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .app-sidebar-logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #7c3aed; }
+    .app-nav-item {
+      padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; color: var(--text-muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .app-nav-item.active {
+      background: rgba(124,58,237,.2);
+      color: #a78bfa;
+      font-weight: 600;
+    }
+    .app-content-mock {
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .app-content-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .app-title { font-size: 18px; font-weight: 700; }
+    .app-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+    }
+    .app-pill-green { background: rgba(52,211,153,.15); color: #34d399; border: 1px solid rgba(52,211,153,.25); }
+    .app-pill-red   { background: rgba(239,68,68,.15);  color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+    .app-pill-amber { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+    .app-pill-blue  { background: rgba(6,182,212,.15);  color: #22d3ee; border: 1px solid rgba(6,182,212,.25); }
+    .mock-test {
+      background: rgba(255,255,255,.03); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .mock-test-icon { font-size: 18px; flex-shrink: 0; }
+    .mock-test-info { flex: 1; }
+    .mock-test-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .mock-test-steps { font-size: 11px; color: var(--text-subtle); }
+    .mock-step-bar {
+      display: flex; gap: 4px; margin-top: 6px;
+    }
+    .mock-step-seg {
+      height: 3px; flex: 1; border-radius: 99px;
+      background: rgba(255,255,255,.08);
+    }
+    .mock-step-seg.done { background: #7c3aed; }
+    .mock-step-seg.pass { background: #34d399; }
+    .mock-step-seg.fail { background: #f87171; }
+
+    /* ─── Logos ──────────────────────────────────────────────────────────────── */
+    .logos-section { padding: 32px 0 64px; }
+    .logos-label {
+      text-align: center; font-size: 12px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text-subtle); margin-bottom: 28px;
+    }
+    .logos-track {
+      display: flex; align-items: center; justify-content: center;
+      gap: 48px; flex-wrap: wrap;
+    }
+    .logos-track span {
+      font-size: 15px; font-weight: 700; color: var(--text-subtle);
+      letter-spacing: .5px;
+      transition: color .2s;
+    }
+    .logos-track span:hover { color: var(--text-muted); }
+
+    /* ─── Section generic ────────────────────────────────────────────────────── */
+    section { position: relative; z-index: 1; }
+    .section-header { text-align: center; margin-bottom: 64px; }
+    .section-header h2 {
+      font-size: clamp(30px, 5vw, 52px);
+      font-weight: 800; letter-spacing: -1.5px; margin: 12px 0 16px;
+    }
+    .section-header p { font-size: 17px; color: var(--text-muted); max-width: 520px; margin: 0 auto; }
+
+    /* ─── Features grid ──────────────────────────────────────────────────────── */
+    .features { padding: 80px 0 100px; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      position: relative; overflow: hidden;
+      transition: border-color .3s, transform .3s, box-shadow .3s;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(124,58,237,.06) 0%, transparent 60%);
+      pointer-events: none;
+      opacity: 0; transition: opacity .3s;
+    }
+    .feature-card:hover { border-color: rgba(124,58,237,.4); transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 20px;
+    }
+    .feature-icon-purple { background: rgba(124,58,237,.15); }
+    .feature-icon-cyan   { background: rgba(6,182,212,.15); }
+    .feature-icon-amber  { background: rgba(245,158,11,.12); }
+    .feature-icon-green  { background: rgba(52,211,153,.12); }
+    .feature-icon-rose   { background: rgba(244,63,94,.12); }
+    .feature-icon-blue   { background: rgba(99,102,241,.15); }
+    .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p  { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+
+    /* ─── Feature wide card ──────────────────────────────────────────────────── */
+    .feature-wide {
+      grid-column: 1 / -1;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+    }
+    .feature-wide .code-block {
+      background: #070b14; border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      line-height: 1.8; overflow-x: auto;
+    }
+    .code-comment { color: #4a5568; }
+    .code-key     { color: #a78bfa; }
+    .code-val     { color: #34d399; }
+    .code-str     { color: #fbbf24; }
+    .code-action  { color: #22d3ee; }
+
+    /* ─── How it works ───────────────────────────────────────────────────────── */
+    .how { padding: 80px 0 100px; background: linear-gradient(180deg, transparent, rgba(124,58,237,.04) 50%, transparent); }
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0; position: relative;
+    }
+    .steps-grid::before {
+      content: '';
+      position: absolute; top: 36px; left: 15%; right: 15%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(124,58,237,.4) 30%, rgba(6,182,212,.4) 70%, transparent);
+    }
+    .step {
+      text-align: center; padding: 0 24px 0;
+      position: relative;
+    }
+    .step-num {
+      width: 72px; height: 72px; border-radius: 50%;
+      margin: 0 auto 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      position: relative; z-index: 1;
+    }
+    .step-num-inner {
+      width: 54px; height: 54px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .step:nth-child(1) .step-num-inner { background: rgba(124,58,237,.2); }
+    .step:nth-child(2) .step-num-inner { background: rgba(6,182,212,.15); }
+    .step:nth-child(3) .step-num-inner { background: rgba(52,211,153,.12); }
+    .step:nth-child(4) .step-num-inner { background: rgba(245,158,11,.12); }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+    .step p  { font-size: 13.5px; color: var(--text-muted); }
+
+    /* ─── Self-healing ───────────────────────────────────────────────────────── */
+    .healing { padding: 80px 0 100px; }
+    .healing-inner {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+    }
+    .healing-visual {
+      position: relative; display: flex; flex-direction: column; gap: 12px;
+    }
+    .heal-row {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 18px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .heal-row.active { border-color: rgba(124,58,237,.5); background: rgba(124,58,237,.07); }
+    .heal-row.success { border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.06); }
+    .heal-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .heal-dot-purple { background: #7c3aed; box-shadow: 0 0 8px #7c3aed; }
+    .heal-dot-green  { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .heal-dot-dim    { background: var(--text-subtle); }
+    .heal-label { font-size: 13px; color: var(--text-muted); flex: 1; }
+    .heal-tag {
+      font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    }
+    .heal-tag-purple { background: rgba(124,58,237,.2); color: #a78bfa; }
+    .heal-tag-green  { background: rgba(52,211,153,.15); color: #34d399; }
+    .heal-tag-dim    { background: rgba(255,255,255,.06); color: var(--text-subtle); }
+    .healing-text h2 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 16px; }
+    .healing-text p  { font-size: 15px; color: var(--text-muted); line-height: 1.7; margin-bottom: 24px; }
+    .strategy-list { display: flex; flex-direction: column; gap: 12px; }
+    .strategy-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 10px;
+      background: rgba(255,255,255,.03); border: 1px solid var(--border);
+    }
+    .strategy-icon { font-size: 18px; width: 36px; text-align: center; }
+    .strategy-name { font-size: 13px; font-weight: 600; }
+    .strategy-desc { font-size: 12px; color: var(--text-subtle); }
+
+    /* ─── CTA section ────────────────────────────────────────────────────────── */
+    .cta-section {
+      padding: 80px 0 120px;
+    }
+    .cta-box {
+      position: relative; overflow: hidden;
+      background: var(--bg-card);
+      border: 1px solid rgba(124,58,237,.25);
+      border-radius: 24px;
+      padding: 72px 48px;
+      text-align: center;
+    }
+    .cta-box::before {
+      content: '';
+      position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(124,58,237,.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-box::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='g' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='1' cy='1' r='1' fill='rgba(255,255,255,0.015)'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .cta-box h2 { font-size: clamp(28px, 5vw, 52px); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 16px; position: relative; z-index: 1; }
+    .cta-box p  { font-size: 17px; color: var(--text-muted); max-width: 480px; margin: 0 auto 36px; position: relative; z-index: 1; }
+    .cta-box .btn { position: relative; z-index: 1; }
+    .cta-contact {
+      margin-top: 24px; font-size: 14px; color: var(--text-subtle);
+      position: relative; z-index: 1;
+    }
+    .cta-contact a { color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,.15); padding-bottom: 1px; transition: color .2s, border-color .2s; }
+    .cta-contact a:hover { color: var(--text); border-color: var(--text-muted); }
+
+    /* ─── Footer ─────────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 24px;
+    }
+    .footer-inner {
+      max-width: 1160px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 24px;
+    }
+    .footer-logo { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--text-subtle); transition: color .2s; }
+    .footer-links a:hover { color: var(--text-muted); }
+    .footer-right { font-size: 13px; color: var(--text-subtle); text-align: right; }
+    .footer-right a { color: var(--text-muted); }
+
+    /* ─── Animations ─────────────────────────────────────────────────────────── */
+    .fade-up {
+      opacity: 0; transform: translateY(32px);
+      transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1);
+    }
+    .fade-up.visible { opacity: 1; transform: none; }
+    .fade-up:nth-child(2) { transition-delay: .1s; }
+    .fade-up:nth-child(3) { transition-delay: .2s; }
+    .fade-up:nth-child(4) { transition-delay: .3s; }
+
+    /* ─── Floating code chip ─────────────────────────────────────────────────── */
+    .chip {
+      position: absolute;
+      background: rgba(13,17,32,.9); border: 1px solid rgba(124,58,237,.3);
+      border-radius: 10px; padding: 10px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--text-muted);
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    .chip-1 { left: -60px; top: 30%; }
+    .chip-2 { right: -40px; top: 55%; }
+    .chip-heal { right: -80px; bottom: 20%; }
+
+    /* ─── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .healing-inner { grid-template-columns: 1fr; gap: 48px; }
+      .healing-visual { order: 1; }
+      .healing-text   { order: 0; }
+      .feature-wide   { grid-template-columns: 1fr; }
+      .steps-grid::before { display: none; }
+      .app-body { grid-template-columns: 1fr; }
+      .app-sidebar-mock { display: none; }
+      .chip { display: none; }
+      .cta-box { padding: 48px 24px; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .footer-right { text-align: center; }
+    }
+
+    /* ─── Ticker animation ───────────────────────────────────────────────────── */
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    .chip-1 { animation: float 5s ease-in-out infinite; }
+    .chip-2 { animation: float 6s ease-in-out infinite .8s; }
+
+    /* ─── Divider line ───────────────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border) 30%, var(--border) 70%, transparent);
+      margin: 0 24px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Navigation ─────────────────────────────────────────────────────────── -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">✨</div>
+      Mendex
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#self-healing">Self-healing</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="nav-cta">
+      <a href="mailto:info@mendexai.com" class="btn btn-primary" style="padding:10px 22px;font-size:14px;">Get in touch</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── Hero ───────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-glow hero-glow-1"></div>
+  <div class="hero-glow hero-glow-2"></div>
+  <div class="hero-glow hero-glow-3"></div>
+
+  <div class="hero-badge badge">AI Test Automation · Desktop App</div>
+
+  <h1>
+    Stop writing tests.<br />
+    <span class="gradient-text">Let AI do it.</span>
+  </h1>
+
+  <p class="hero-sub">
+    Mendex generates, runs, and self-heals your browser tests automatically.
+    Point it at a URL, describe what to test — and ship with confidence.
+  </p>
+
+  <div class="hero-actions">
+    <a href="mailto:info@mendexai.com" class="btn btn-primary">
+      <span>Request early access</span>
+      <span>→</span>
+    </a>
+    <a href="#how-it-works" class="btn btn-ghost">See how it works</a>
+  </div>
+
+  <div class="hero-meta">
+    <div class="hero-meta-item">🌐 <span>Works on any website</span></div>
+    <div class="hero-meta-item">🔒 <span>Runs 100% locally</span></div>
+    <div class="hero-meta-item">🤖 <span>OpenAI · Anthropic · Ollama</span></div>
+    <div class="hero-meta-item">🎭 <span>Powered by Playwright</span></div>
+  </div>
+</section>
+
+<!-- ─── App preview ─────────────────────────────────────────────────────────── -->
+<div class="app-preview-wrap">
+  <div class="app-preview-glow"></div>
+
+  <!-- Floating chips -->
+  <div class="chip chip-1">✅ Login detected automatically</div>
+  <div class="chip chip-2">🎬 Video saved → mendex-reports/</div>
+
+  <div class="app-preview">
+    <div class="app-titlebar">
+      <div class="app-dot"></div><div class="app-dot"></div><div class="app-dot"></div>
+      <span class="app-titlebar-text">Mendex — QA Test Runner</span>
+    </div>
+    <div class="app-body">
+      <div class="app-sidebar-mock">
+        <div class="app-sidebar-logo"><div class="app-sidebar-logo-dot"></div>Mendex</div>
+        <div class="app-nav-item">📁 Tests</div>
+        <div class="app-nav-item">⏺ Record</div>
+        <div class="app-nav-item active">✨ Generate</div>
+        <div class="app-nav-item">📊 Latest Run</div>
+        <div class="app-nav-item">📈 History</div>
+        <div class="app-nav-item">⚙ Settings</div>
+      </div>
+      <div class="app-content-mock">
+        <div class="app-content-header">
+          <span class="app-title">✨ Generate tests</span>
+          <span class="app-pill app-pill-blue">AI-powered</span>
+        </div>
+
+        <div class="mock-test">
+          <div class="mock-test-icon">✅</div>
+          <div class="mock-test-info">
+            <div class="mock-test-name">User registration flow</div>
+            <div class="mock-test-steps">8 steps · completed in 4.2s</div>
+            <div class="mock-step-bar">
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+            </div>
+          </div>
+          <span class="app-pill app-pill-green">PASS</span>
+        </div>
+
+        <div class="mock-test">
+          <div class="mock-test-icon">🔄</div>
+          <div class="mock-test-info">
+            <div class="mock-test-name">Checkout — payment step</div>
+            <div class="mock-test-steps">12 steps · self-healing…</div>
+            <div class="mock-step-bar">
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg done"></div>
+              <div class="mock-step-seg"></div>
+              <div class="mock-step-seg"></div>
+              <div class="mock-step-seg"></div>
+            </div>
+          </div>
+          <span class="app-pill app-pill-amber">HEALING</span>
+        </div>
+
+        <div class="mock-test">
+          <div class="mock-test-icon">❌</div>
+          <div class="mock-test-info">
+            <div class="mock-test-name">Search results filter</div>
+            <div class="mock-test-steps">6 steps · step 4 failed</div>
+            <div class="mock-step-bar">
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg pass"></div>
+              <div class="mock-step-seg fail"></div>
+              <div class="mock-step-seg"></div>
+              <div class="mock-step-seg"></div>
+            </div>
+          </div>
+          <span class="app-pill app-pill-red">FAIL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Logos ───────────────────────────────────────────────────────────────── -->
+<div class="logos-section">
+  <div class="container">
+    <p class="logos-label">Integrates with</p>
+    <div class="logos-track">
+      <span>OpenAI</span>
+      <span>Anthropic</span>
+      <span>Ollama</span>
+      <span>Playwright</span>
+      <span>Chromium</span>
+      <span>Firefox</span>
+      <span>WebKit</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ─── Features ───────────────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="badge">Features</div>
+      <h2>Everything you need,<br/><span class="gradient-text">nothing you don't</span></h2>
+      <p>A complete AI testing toolkit that fits into your workflow — no infrastructure, no cloud account, no lock-in.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card fade-up">
+        <div class="feature-icon feature-icon-purple">✨</div>
+        <h3>AI Test Generation</h3>
+        <p>Paste a URL or describe what to test in plain English. Mendex inspects the page and writes the full test plan for you — including assertions, form fills, and navigation.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon feature-icon-cyan">⏺</div>
+        <h3>Click-to-Record</h3>
+        <p>Open a browser, click through your workflow, and Mendex captures every interaction. The recording is instantly converted into a replayable, editable YAML test plan.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon feature-icon-green">🔄</div>
+        <h3>Self-Healing Tests</h3>
+        <p>When a selector breaks after a UI change, Mendex automatically tries ARIA roles, visible text, and LLM-generated CSS — often without you even noticing the fix.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon feature-icon-amber">🔐</div>
+        <h3>Smart Login Automation</h3>
+        <p>Configure credentials once. Mendex detects the login form — even behind a "Sign In" button click or inside an iframe — fills the fields, and proceeds to your test.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon feature-icon-rose">🎬</div>
+        <h3>Video Recording</h3>
+        <p>Every test run is recorded as a video. Watch exactly what happened on any step — invaluable for debugging failures without having to reproduce them manually.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon feature-icon-blue">⏱</div>
+        <h3>Scheduled Runs</h3>
+        <p>Set up a schedule and let Mendex run your test suite every 15 minutes, hourly, or daily. Results and history are saved locally so you always know when something broke.</p>
+      </div>
+
+      <!-- Wide card: YAML format -->
+      <div class="feature-card feature-wide fade-up">
+        <div>
+          <div class="feature-icon feature-icon-purple">📄</div>
+          <h3 style="font-size:22px;margin-bottom:12px;">Human-readable test plans</h3>
+          <p style="font-size:15px;margin-bottom:20px;">Tests are stored as plain YAML files you can read, edit, and version-control. No proprietary format, no database — just files in your project folder.</p>
+          <p style="font-size:14px;color:var(--text-subtle);">You can also edit steps directly inside the app with the built-in step editor — no YAML knowledge required.</p>
+        </div>
+        <div class="code-block">
+<span class="code-comment"># checkout-flow.mendex.yml</span>
+<span class="code-key">name</span>: <span class="code-str">Checkout flow</span>
+<span class="code-key">steps</span>:
+  - <span class="code-key">action</span>: <span class="code-action">navigate</span>
+    <span class="code-key">target</span>: <span class="code-str">https://shop.example.com/cart</span>
+  - <span class="code-key">action</span>: <span class="code-action">click</span>
+    <span class="code-key">target</span>: <span class="code-str">button[data-testid="checkout"]</span>
+  - <span class="code-key">action</span>: <span class="code-action">fill</span>
+    <span class="code-key">target</span>: <span class="code-str">input[name="email"]</span>
+    <span class="code-key">value</span>: <span class="code-str">test@example.com</span>
+  - <span class="code-key">action</span>: <span class="code-action">assert</span>
+    <span class="code-key">type</span>: <span class="code-val">text</span>
+    <span class="code-key">target</span>: <span class="code-str">.order-summary</span>
+    <span class="code-key">expected</span>: <span class="code-str">Order confirmed</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── How it works ──────────────────────────────────────────────────────────── -->
+<section class="how" id="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <div class="badge">Workflow</div>
+      <h2>From idea to passing test<br/><span class="gradient-text">in minutes</span></h2>
+      <p>No setup overhead. No waiting for CI pipelines. Everything runs on your machine.</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step fade-up">
+        <div class="step-num"><div class="step-num-inner">🌐</div></div>
+        <h3>1. Point at a URL</h3>
+        <p>Enter the URL of the page you want to test, or describe the flow in plain language.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num"><div class="step-num-inner">🤖</div></div>
+        <h3>2. AI generates the plan</h3>
+        <p>The AI inspects the page DOM and writes a full step-by-step test plan automatically.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num"><div class="step-num-inner">▶</div></div>
+        <h3>3. Run &amp; watch</h3>
+        <p>Tests execute in a real browser via Playwright. Watch live progress and video replay.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num"><div class="step-num-inner">✅</div></div>
+        <h3>4. Ship with confidence</h3>
+        <p>Results, history, and videos are saved locally. Schedule re-runs so regressions never sneak in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── Self-healing ──────────────────────────────────────────────────────────── -->
+<section class="healing" id="self-healing">
+  <div class="container">
+    <div class="healing-inner">
+      <div class="healing-visual fade-up">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-subtle);margin-bottom:8px;">Selector broken after UI update</div>
+
+        <div class="heal-row" style="opacity:.5">
+          <div class="heal-dot heal-dot-dim"></div>
+          <div class="heal-label"><code style="font-family:'JetBrains Mono',monospace;font-size:12px;">#submit-btn-v2</code> — not found</div>
+          <div class="heal-tag heal-tag-dim">FAILED</div>
+        </div>
+
+        <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-subtle);margin:16px 0 8px;">Self-healing strategies</div>
+
+        <div class="heal-row active">
+          <div class="heal-dot heal-dot-purple"></div>
+          <div class="heal-label">Strategy 1 · <strong>ARIA role</strong> — looking for <code style="font-family:'JetBrains Mono',monospace;font-size:12px;">role="button"</code> with label "Submit"</div>
+          <div class="heal-tag heal-tag-purple">TRYING</div>
+        </div>
+
+        <div class="heal-row success">
+          <div class="heal-dot heal-dot-green"></div>
+          <div class="heal-label">Matched → <code style="font-family:'JetBrains Mono',monospace;font-size:12px;">button[aria-label="Submit order"]</code></div>
+          <div class="heal-tag heal-tag-green">HEALED ✓</div>
+        </div>
+
+        <div class="heal-row" style="opacity:.35">
+          <div class="heal-dot heal-dot-dim"></div>
+          <div class="heal-label">Strategy 2 · <strong>Visible text</strong> — skipped</div>
+          <div class="heal-tag heal-tag-dim">SKIPPED</div>
+        </div>
+
+        <div class="heal-row" style="opacity:.35">
+          <div class="heal-dot heal-dot-dim"></div>
+          <div class="heal-label">Strategy 3 · <strong>LLM-generated CSS</strong> — skipped</div>
+          <div class="heal-tag heal-tag-dim">SKIPPED</div>
+        </div>
+
+        <div style="margin-top:8px;padding:12px 16px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.25);border-radius:10px;font-size:13px;color:#34d399;">
+          ✅ Test continued without interruption. Healing result saved.
+        </div>
+      </div>
+
+      <div class="healing-text fade-up">
+        <div class="badge" style="margin-bottom:20px;">Self-Healing AI</div>
+        <h2>Tests that fix<br/><span class="gradient-text">themselves</span></h2>
+        <p>UI changes constantly. CSS classes get renamed, IDs change, components restructure. Mendex handles it automatically so your tests stay green even as your codebase evolves.</p>
+        <p>When a step fails to find an element, Mendex tries three increasingly powerful recovery strategies before marking the test as failed.</p>
+        <div class="strategy-list">
+          <div class="strategy-item">
+            <div class="strategy-icon">♿</div>
+            <div>
+              <div class="strategy-name">ARIA Role Matching</div>
+              <div class="strategy-desc">Finds elements by their semantic role and accessible label — resilient to class/ID changes</div>
+            </div>
+          </div>
+          <div class="strategy-item">
+            <div class="strategy-icon">🔤</div>
+            <div>
+              <div class="strategy-name">Visible Text Matching</div>
+              <div class="strategy-desc">Locates elements by their user-visible text content — language-agnostic</div>
+            </div>
+          </div>
+          <div class="strategy-item">
+            <div class="strategy-icon">🧠</div>
+            <div>
+              <div class="strategy-name">LLM-Generated CSS</div>
+              <div class="strategy-desc">The AI analyzes the page snapshot and generates a new selector — covers everything else</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── CTA ────────────────────────────────────────────────────────────────── -->
+<section class="cta-section" id="contact">
+  <div class="container">
+    <div class="cta-box">
+      <h2>Ready to test smarter?</h2>
+      <p>Mendex is currently in early access. Reach out and we'll get you set up.</p>
+      <a href="mailto:info@mendexai.com" class="btn btn-primary" style="font-size:16px;padding:15px 36px;">
+        Contact us →
+      </a>
+      <p class="cta-contact">
+        Or email us directly at <a href="mailto:info@mendexai.com">info@mendexai.com</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <div class="nav-logo-icon" style="width:28px;height:28px;font-size:14px;">✨</div>
+      Mendex
+    </div>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#self-healing">Self-healing</a>
+      <a href="mailto:info@mendexai.com">Contact</a>
+    </div>
+    <div class="footer-right">
+      <a href="mailto:info@mendexai.com">info@mendexai.com</a><br/>
+      <span style="margin-top:4px;display:block;">© 2026 Mendex. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ─── Nav scroll effect ──────────────────────────────────────────────────────
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+
+  // ─── Intersection observer for fade-up ──────────────────────────────────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // ─── Smooth heal row animation loop ────────────────────────────────────────
+  const healRows = document.querySelectorAll('.heal-row');
+  // Already set statically, but could be animated here in future.
+</script>
+</body>
+</html>
